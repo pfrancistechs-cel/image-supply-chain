@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+*.pem
+.DS_Store
+results/*.json
+keys/*.key
+keys/*.pub

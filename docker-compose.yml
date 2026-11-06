@@ -1,0 +1,35 @@
+# Two long-running containers: the registry (where images live) and the console (a live view).
+# The application image is NOT part of this file: it is built, signed, and only started by the gate (scripts/supply.sh gate).
+name: supplychain
+
+services:
+  registry:
+    image: ${REGISTRY_IMAGE:-registry:2}
+    container_name: sc-registry
+    restart: unless-stopped
+    ports: ["127.0.0.1:5000:5000"]          # localhost only: docker push/pull and the scripts use localhost:5000
+    volumes: ["registry_data:/var/lib/registry"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5000/v2/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  console:
+    build: ./demo
+    image: supplychain-demo:local
+    container_name: sc-console
+    restart: unless-stopped
+    environment:
+      REGISTRY_URL: http://registry:5000
+      REPO: shop/app
+      RESULTS_DIR: /results
+      PORT: "8081"
+    ports: ["8081:8081"]
+    volumes: ["./results:/results:ro"]
+    depends_on:
+      registry:
+        condition: service_healthy
+
+volumes:
+  registry_data:
